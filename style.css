@@ -1,0 +1,101 @@
+/*ОБНУЛЯШКА*/
+*{padding: 0;margin: 0;border: 0;}
+*,*:before,*:after{-moz-box-sizing: border-box;-webkit-box-sizing: border-box;box-sizing: border-box;}
+:focus,:active{outline: none;}
+a:focus,a:active{outline: none;}
+nav,footer,header,aside{display: block;}
+html,body{height: 100%;width: 100%;font-size: 100%;line-height: 1;font-size: 16px;
+-ms-text-size-adjust: 100%;-moz-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;}
+input,button,textarea{font-family:inherit;}
+input::-ms-clear{display: none;}
+button{cursor: pointer;}
+button::-moz-focus-inner {padding:0;border:0;}
+a, a:visited{text-decoration: none;}
+a:hover{text-decoration: none;}
+ul li{list-style: none;}
+img{vertical-align: top;}
+h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight: 400;}
+/*--------------------*/
+
+body {
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  height: 100vh; 
+  margin: 0; 
+  background-color: #000;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; 
+  align-items: center;               
+  margin: 0 auto;          
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.cell {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25px;
+  box-sizing: border-box;
+}
+.wall{
+  background-image:url(/img/image.png);
+  background-size: cover;
+  background-position: center; 
+  background-repeat: no-repeat; 
+}
+.back, .player{
+  background-color: rgb(81, 15, 15);
+  background-image:url(/img/back.png);
+  background-size: cover;
+  background-position: center; 
+  background-repeat: no-repeat; 
+}
+.empty{
+  background-color: #000;
+}
+.target{
+  background-color: rgb(86, 7, 120);
+  background-image:url(/img/target.png);
+  background-size: cover;
+  background-position: center; 
+  background-repeat: no-repeat; 
+}
+.box{
+  background-color: #e15df5;
+  background-image:url(/img/box.png);
+  background-size: cover;
+  background-position: center; 
+  background-repeat: no-repeat; 
+}
+.container__box{
+  color: #e15df5;
+}
+
+#moveCount{
+  color:#e15df5;
+  font-size: 25px;
+}
+#timer{
+  color: #e15df5;
+  font-size: 25px;
+}
+
+.count-and-timer{
+  color: rgb(239, 175, 239);
+  margin-bottom: 30px;
+}
+
+b{
+  font-size: 25px;
+}
