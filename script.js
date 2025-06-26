@@ -97,23 +97,31 @@ function updateCellVisual(x, y) {
   // слой с подвижными объектами — добавляем класс поверх базового
   if(obj === objectTypes.box){ //если в ячейке находится ящик
     cellDiv.classList.add('box'); // тут добавляем класс для ящика
-    const img = cellDiv.querySelector('img'); // удаляем изображение игрока, если оно есть чтобы оно не наложилось
-    if(img) img.remove();
+    removePlayerImage(cellDiv); // удаляем изображение игрока, если оно есть чтобы оно не наложилось
   } else if(obj === objectTypes.player){ //если в ячейке находится игорк
     cellDiv.classList.add('player'); // добавляем класс для игрока
-    if(!cellDiv.querySelector('img')){ // если нет изображения игрока - создаем его
-      const img = document.createElement('img'); 
-      img.src = 'img/monstr.svg'; // путь к изображению
-      img.alt = 'Игрок'; // альтернативный текст
-      img.style.width = '100%'; // занимает всю ширину ячейки
-      img.style.height = '100%'; // занимает всю высоту ячейки
-      cellDiv.appendChild(img); // добавляем в ячейку
-    }
+    addPlayerImage(cellDiv); // добавляем изображение игрока если его нет
   } else {
-    // если в ячейке нет объекта (ни игрока, ни ящика), проверяем, есть ли там изображение
-    const img = cellDiv.querySelector('img');
-    if(img) img.remove(); //удаляем его, чтобы ячейка не содержала лишних элементов
+    removePlayerImage(cellDiv); //удаляем изображение игрока, если ячейка пуста
   }
+}
+
+// функция добавления изображения игрока
+function addPlayerImage(cellDiv) {
+  if(!cellDiv.querySelector('img')){ // если нет изображения игрока - создаем его
+    const img = document.createElement('img'); 
+    img.src = 'img/monstr.svg'; // путь к изображению
+    img.alt = 'Игрок'; // альтернативный текст
+    img.style.width = '100%'; // занимает всю ширину ячейки
+    img.style.height = '100%'; // занимает всю высоту ячейки
+    cellDiv.appendChild(img); // добавляем в ячейку
+  }
+}
+
+// функция удаления изображения игрока
+function removePlayerImage(cellDiv) {
+  const img = cellDiv.querySelector('img');
+  if(img) img.remove(); //удаляем изображение, если оно есть
 }
 
 // проверка выхода за границы карты
@@ -145,57 +153,59 @@ function movePlayer(dx, dy) {
   const nextObj = objectMap[ny][nx]; // получаем объект, который находится в новой позиции на карте объектов
 
   if(nextObj === objectTypes.none){ // если новая позиция пуста, там нет объекта
-    objectMap[y][x] = objectTypes.none; // освобождаем текущую позицию
-    objectMap[ny][nx] = objectTypes.player; // занимаем игроком новую позицию
-
-    //обновляем отображение старой и новой клетки на карте
-    updateCellVisual(x, y); 
-    updateCellVisual(nx, ny); 
-
-    playerPosition = {x: nx, y: ny}; // обновляем координаты игрока
-
-    incrementMoveCount(); // обновляем счётчик ходов
-
-    if(checkWin()){ // проверяем условие победы
-      stopTimer(); // если выиграли - останавливаем таймер
-      setTimeout(() =>{ // показываем оповещение о победе с небольшой задержкой в 10 мс, чтобы браузер успел обновить интерфейс перед появлением alert
-        alert(`Поздравляем! Вы выиграли за ${moveCount} ходов и время ${document.getElementById('timer').textContent}`);
-      }, 10);
-    }
-
-  } else if(nextObj === objectTypes.box){ // если в новой позиции ящик
-    // координаты за ящиком, пытаемся его толкнуть
-    const bx = nx + dx;
-    const by = ny + dy;
-
-    //проверка что клетка за ящииком
-    if(!isInsideMap(bx, by)) return; // в пределах карты
-    if(baseMap[by][bx] === baseTypes.wall) return; // не стена
-    if(objectMap[by][bx] !== objectTypes.none) return; // пустая(нет других объектов)
-    //если хоть одно из этих условий не выполнено, то толкнуть ящик нельзя, движение отменяется
-    // толкаем коробку вперед
-    objectMap[by][bx] = objectTypes.box; // перемещаем ящик на новую позицию
-    objectMap[ny][nx] = objectTypes.player; // перемещаем игрока на место ящика
-    objectMap[y][x] = objectTypes.none; // освобождаем старую позицию - она пустая теперь
-
-    // обновляем отображение всех затронутых клеток
-    updateCellVisual(x, y);
-    updateCellVisual(nx, ny);
-    updateCellVisual(bx, by);
-
-    playerPosition = {x: nx, y: ny}; // обновляем координаты игрока
-    incrementMoveCount(); // обновляем счетчик ходов
-
-    if(checkWin()){ // проверяем условие победы
-      stopTimer();
-      setTimeout(() =>{
-        alert(`Поздравляем! Вы выиграли за ${moveCount} ходов и время ${document.getElementById('timer').textContent}`);
-      }, 10);
-    }
+    movePlayerToPosition(x, y, nx, ny);
+    checkWinCondition(); // проверяем условие победы
+  } 
+  else if(nextObj === objectTypes.box){ // если в новой позиции ящик
+    tryPushBox(x, y, nx, ny, dx, dy);
   }
 }
 
+// перемещение игрока на новую позицию
+function movePlayerToPosition(fromX, fromY, toX, toY) {
+  objectMap[fromY][fromX] = objectTypes.none; // освобождаем текущую позицию
+  objectMap[toY][toX] = objectTypes.player; // занимаем игроком новую позицию
+
+  //обновляем отображение старой и новой клетки на карте
+  updateCellsVisual([[fromX, fromY], [toX, toY]]);
+
+  playerPosition = {x: toX, y: toY}; // обновляем координаты игрока
+  incrementMoveCount(); // обновляем счётчик ходов
+}
+
+// попытка толкнуть ящик
+function tryPushBox(playerX, playerY, boxX, boxY, dx, dy) {
+  // координаты за ящиком, пытаемся его толкнуть
+  const newBoxX = boxX + dx;
+  const newBoxY = boxY + dy;
+
+  //проверка что клетка за ящииком
+  if(!isInsideMap(newBoxX, newBoxY)) return; // в пределах карты
+  if(baseMap[newBoxY][newBoxX] === baseTypes.wall) return; // не стена
+  if(objectMap[newBoxY][newBoxX] !== objectTypes.none) return; // пустая(нет других объектов)
+  
+  //если хоть одно из этих условий не выполнено, то толкнуть ящик нельзя, движение отменяется
+  // толкаем коробку вперед
+  objectMap[newBoxY][newBoxX] = objectTypes.box; // перемещаем ящик на новую позицию
+  objectMap[boxY][boxX] = objectTypes.player; // перемещаем игрока на место ящика
+  objectMap[playerY][playerX] = objectTypes.none; // освобождаем старую позицию - она пустая теперь
+
+  // обновляем отображение всех затронутых клеток
+  updateCellsVisual([[playerX, playerY], [boxX, boxY], [newBoxX, newBoxY]]);
+
+  playerPosition = {x: boxX, y: boxY}; // обновляем координаты игрока
+  incrementMoveCount(); // обновляем счетчик ходов
+  checkWinCondition(); // проверяем условие победы
+}
+
 // проверяем победу: все коробки на целях
+function checkWinCondition() {
+  if(checkWin()){ // проверяем условие победы
+    handleWin(); // обрабатываем победу
+  }
+}
+
+// проверка всех коробок на целевых позициях
 function checkWin() {
   for(let y=0; y<baseMap.length; y++){ // перебираем все строки карты
     for(let x=0; x<baseMap[0].length; x++){ // перебираем все столбцы в строке
@@ -248,5 +258,26 @@ function stopTimer() {
   clearInterval(timerInterval); // останавливает выполнение функции, которая была запущена через setInterval.
   timerInterval = null; // сбрасываем идентификатор, чтобы указать что таймер не работает сейчас
 }
+
+// вывод сообщения о победе и остановка таймера
+function handleWin() {
+  stopTimer();
+  setTimeout(() => { // показываем оповещение о победе с небольшой задержкой в 10 мс, чтобы браузер успел обновить интерфейс перед появлением alert
+    alert(`Поздравляем! Вы выиграли за ${moveCount} ходов и время ${document.getElementById('timer').textContent}`);
+  }, 10);
+}
+
+// обновление нескольких ячеек на карте
+//функция принимает параметр cells — это массив, каждый элемент которого — массив из двух чисел [x, y], представляющих координаты ячейки на карте (x — горизонтальная позиция, y — вертикальная).
+function updateCellsVisual(cells) {
+  cells.forEach(([x, y]) => updateCellVisual(x, y)); 
+}
+//cells.forEach(...) — метод массива, который перебирает все элементы массива cells.
+//для каждого элемента вызывается функция-обработчик.
+//в качестве параметра обработчик получает текущий элемент — в нашем случае это массив [x, y].
+//синтаксис ([x, y]) — это деструктуризация массива: мы сразу извлекаем из массива первый элемент в переменную x, второй — в y.
+//для каждой пары координат вызывается функция updateCellVisual(x, y).
+//функция updateCellVisual обновляет визуальное отображение конкретной ячейки с координатами (x, y) на карте игры
+
 // запускаем отрисовку карты
 drawMap();
