@@ -53,7 +53,7 @@ for(let y=0; y<objectMap.length; y++){ // перебор строк
   }
 }
 
-const cellElements = [];
+const cellElements = []; //массив, в котором будет отрисовываться карта
 
 // отрисовываем карту с учетом двух слоев
 function drawMap() {
@@ -84,7 +84,7 @@ function updateCellVisual(x, y) {
   const base = baseMap[y][x]; // получаем тип базового слоя
   const obj = objectMap[y][x]; // получаем тип объекта
 
-  cellDiv.className = 'cell'; // тут сбрасываем классы ячейки, оставляя только cell
+  cellDiv.className = 'cell'; // тут сбрасываем все текущие классы ячейки, оставляя только cell
 
   // добавляем класс в зависимости от базового слоя
   switch(base){
@@ -95,11 +95,11 @@ function updateCellVisual(x, y) {
   }
 
   // слой с подвижными объектами — добавляем класс поверх базового
-  if(obj === objectTypes.box){
-    cellDiv.classList.add('box'); // тут добавляем класс дл ящика
-    const img = cellDiv.querySelector('img'); // удаляем изображение игрока, если оно есть
+  if(obj === objectTypes.box){ //если в ячейке находится ящик
+    cellDiv.classList.add('box'); // тут добавляем класс для ящика
+    const img = cellDiv.querySelector('img'); // удаляем изображение игрока, если оно есть чтобы оно не наложилось
     if(img) img.remove();
-  } else if(obj === objectTypes.player){
+  } else if(obj === objectTypes.player){ //если в ячейке находится игорк
     cellDiv.classList.add('player'); // добавляем класс для игрока
     if(!cellDiv.querySelector('img')){ // если нет изображения игрока - создаем его
       const img = document.createElement('img'); 
@@ -110,9 +110,9 @@ function updateCellVisual(x, y) {
       cellDiv.appendChild(img); // добавляем в ячейку
     }
   } else {
-    // если нет объекта — удаляем картинку игрока если есть
+    // если в ячейке нет объекта (ни игрока, ни ящика), проверяем, есть ли там изображение
     const img = cellDiv.querySelector('img');
-    if(img) img.remove();
+    if(img) img.remove(); //удаляем его, чтобы ячейка не содержала лишних элементов
   }
 }
 
@@ -124,65 +124,66 @@ function isInsideMap(x, y) {
 // обновление счётчика ходов и запуск таймера при первом ходе
 function incrementMoveCount() {
   moveCount++;
+  //Свойство .textContent задаёт или получает текстовое содержимое этого элемента.
+  //Здесь мы присваиваем ему текущее значение переменной moveCount.
   document.getElementById('moveCount').textContent = moveCount; //обновляем отображение счетчика в интерфейсе
   if(moveCount === 1) startTimer(); // если это первый ход, то запускаем таймер
 }
 
-// функция движения игрока
+// функция движения игрока. принимает два параметра - смещение по оси Х и У
 function movePlayer(dx, dy) {
-  // текущие координаты игрока
+  // получаем текущие координаты игрока
   const x = playerPosition.x;
   const y = playerPosition.y;
-  // новые координаты
+  // вычисляем новые координаты, куда игрок хочет переместиться
   const nx = x + dx;
   const ny = y + dy;
 
-  if(!isInsideMap(nx, ny)) return; // проверяем выход за границы карты
-  if(baseMap[ny][nx] === baseTypes.wall) return; // проверка на стену
+  if(!isInsideMap(nx, ny)) return; // проверяем выход новых координат за границы карты, если мы вышли то движение невозможно
+  if(baseMap[ny][nx] === baseTypes.wall) return; // проверка на стену, если далее стена - движение невозможно
 
-  const nextObj = objectMap[ny][nx]; // получаем объект в новой позиции
+  const nextObj = objectMap[ny][nx]; // получаем объект, который находится в новой позиции на карте объектов
 
-  if(nextObj === objectTypes.none){ // если новая позиция пуста
+  if(nextObj === objectTypes.none){ // если новая позиция пуста, там нет объекта
     objectMap[y][x] = objectTypes.none; // освобождаем текущую позицию
-    objectMap[ny][nx] = objectTypes.player; // занимаем новую позицию
+    objectMap[ny][nx] = objectTypes.player; // занимаем игроком новую позицию
 
-    //обновляем отображение
-    updateCellVisual(x, y);
-    updateCellVisual(nx, ny);
+    //обновляем отображение старой и новой клетки на карте
+    updateCellVisual(x, y); 
+    updateCellVisual(nx, ny); 
 
-    playerPosition = {x: nx, y: ny}; // обновляем позицию игрока
+    playerPosition = {x: nx, y: ny}; // обновляем координаты игрока
 
     incrementMoveCount(); // обновляем счётчик ходов
 
     if(checkWin()){ // проверяем условие победы
-      stopTimer();
-      setTimeout(() =>{ // показываем оповещение о победе с небольшой задержкой
+      stopTimer(); // если выиграли - останавливаем таймер
+      setTimeout(() =>{ // показываем оповещение о победе с небольшой задержкой в 10 мс, чтобы браузер успел обновить интерфейс перед появлением alert
         alert(`Поздравляем! Вы выиграли за ${moveCount} ходов и время ${document.getElementById('timer').textContent}`);
       }, 10);
     }
 
   } else if(nextObj === objectTypes.box){ // если в новой позиции ящик
-    // координаты за ящиком
+    // координаты за ящиком, пытаемся его толкнуть
     const bx = nx + dx;
     const by = ny + dy;
 
-    //проверка перемещения ящика
-    if(!isInsideMap(bx, by)) return;
-    if(baseMap[by][bx] === baseTypes.wall) return;
-    if(objectMap[by][bx] !== objectTypes.none) return;
-
+    //проверка что клетка за ящииком
+    if(!isInsideMap(bx, by)) return; // в пределах карты
+    if(baseMap[by][bx] === baseTypes.wall) return; // не стена
+    if(objectMap[by][bx] !== objectTypes.none) return; // пустая(нет других объектов)
+    //если хоть одно из этих условий не выполнено, то толкнуть ящик нельзя, движение отменяется
     // толкаем коробку вперед
-    objectMap[by][bx] = objectTypes.box; // перемещаем ящик
-    objectMap[ny][nx] = objectTypes.player; // перемещаем игрока
-    objectMap[y][x] = objectTypes.none; // освобождаем старую позицию
+    objectMap[by][bx] = objectTypes.box; // перемещаем ящик на новую позицию
+    objectMap[ny][nx] = objectTypes.player; // перемещаем игрока на место ящика
+    objectMap[y][x] = objectTypes.none; // освобождаем старую позицию - она пустая теперь
 
     // обновляем отображение всех затронутых клеток
     updateCellVisual(x, y);
     updateCellVisual(nx, ny);
     updateCellVisual(bx, by);
 
-    playerPosition = {x: nx, y: ny}; // обновляем позицию игрока
-
+    playerPosition = {x: nx, y: ny}; // обновляем координаты игрока
     incrementMoveCount(); // обновляем счетчик ходов
 
     if(checkWin()){ // проверяем условие победы
@@ -196,18 +197,18 @@ function movePlayer(dx, dy) {
 
 // проверяем победу: все коробки на целях
 function checkWin() {
-  for(let y=0; y<baseMap.length; y++){ // перебираем всю карту
-    for(let x=0; x<baseMap[0].length; x++){
-      if(objectMap[y][x] === objectTypes.box && baseMap[y][x] !== baseTypes.target){ // если есть коробка вне цели
+  for(let y=0; y<baseMap.length; y++){ // перебираем все строки карты
+    for(let x=0; x<baseMap[0].length; x++){ // перебираем все столбцы в строке
+      if(objectMap[y][x] === objectTypes.box && baseMap[y][x] !== baseTypes.target){ // если в этой клетке есть ящик и при этом эта клетка не является целью
         return false; //игра не закончена
       }
     }
   }
-  return true; // если все ящики на целях
+  return true; // если все ящики на целях, то возвращаем true
 }
 
 // обработка нажатий клавиш для управления
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', e => { // добавляем обработчик события на объект document
   const key = e.key.toLowerCase(); // приводим код клавиш к нижнему регистру
   switch(key){
     case 'arrowup':
@@ -222,29 +223,30 @@ document.addEventListener('keydown', e => {
 });
 
 let moveCount = 0; // счетчик ходов
-let timerInterval = null; //идентификатор интервала таймера
+let timerInterval = null; //идентификатор интервала таймера, null значит что он не запущен
 let secondsElapsed = 0; //прошедшие секунды
 
 // функция обновления таймера в формате mm:ss
 function updateTimerDisplay() {
-  const minutes = Math.floor(secondsElapsed / 60).toString().padStart(2, '0'); // вычисляем минуты и секунды
-  const seconds = (secondsElapsed % 60).toString().padStart(2, '0');
+  //вычисляем целое число минут, прошедших за время secondsElapsed, преобразуем число в строку
+  const minutes = Math.floor(secondsElapsed / 60).toString().padStart(2, '0'); //.padStart(2, '0') — дополняет строку слева нулями, чтобы всегда было минимум 2 символа. Например, 5 → "05".
+  const seconds = (secondsElapsed % 60).toString().padStart(2, '0'); //Аналогично для секунд: secondsElapsed % 60 — остаток от деления на 60, то есть количество секунд, не вошедших в полные минуты.
   document.getElementById('timer').textContent = `${minutes}:${seconds}`; // обновляем текст в элементе c id timer
 }
 
 // запуск таймера
 function startTimer() {
-  if(timerInterval) return; // если уже запущен, то выходим
-  timerInterval = setInterval(() => { //устанавливаем интервал обновления каждую секунду
-    secondsElapsed++; // увеличиваем счетчик секунд
+  if(timerInterval) return; // если уже запущен(не null), то выходим
+  timerInterval = setInterval(() => { //если не запущен, то устанавливаем интервал обновления каждую секунду
+    secondsElapsed++; // увеличиваем счетчик секунд на 1
     updateTimerDisplay(); // обновляем отображения
   }, 1000);
 }
 
 // остановка таймера
 function stopTimer() {
-  clearInterval(timerInterval); // очищаем интервал
-  timerInterval = null; // сбрасываем идентификатор
+  clearInterval(timerInterval); // останавливает выполнение функции, которая была запущена через setInterval.
+  timerInterval = null; // сбрасываем идентификатор, чтобы указать что таймер не работает сейчас
 }
 // запускаем отрисовку карты
 drawMap();
